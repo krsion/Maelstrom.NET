@@ -2,13 +2,15 @@
 using MaelstromNode.Models;
 using MaelstromNode.Models.MessageBodies;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Text.Json;
 
 namespace MaelstromNode;
 
-internal class MaelstromNode(IReceiver receiver, ISender sender) : BackgroundService
+internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, ISender sender) : BackgroundService
 {
+    protected readonly ILogger logger = logger;
     private readonly IReceiver _receiver = receiver;
     private readonly ISender _sender = sender;
     public string NodeId = "";
@@ -21,19 +23,21 @@ internal class MaelstromNode(IReceiver receiver, ISender sender) : BackgroundSer
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        logger.LogInformation("Starting...");
         await InitAsync();
         while (!stoppingToken.IsCancellationRequested)
         {
             var message = await RecvAsync();
             if (message != null)
             {
-                Console.WriteLine($"Received message of type: {message.Body.Type}");
+                logger.LogInformation("Received message of type: {MessageType}", message.Body.Type);
                 if (_message_handlers.TryGetValue(message.Body.Type, out var handler))
                 {
                     await handler(message);
                 }
                 else
                 {
+                    logger.LogError("Message type {MessageType} not supported", message.Body.Type);
                     await ErrorAsync(message, ErrorCodes.NotSupported, $"Message type {message.Body.Type} not supported");
                 }
             }
@@ -42,6 +46,7 @@ internal class MaelstromNode(IReceiver receiver, ISender sender) : BackgroundSer
 
     private async Task InitAsync()
     {
+        logger.LogInformation("Awaiting init message");
         var message = await RecvAsync();
         if (message == null || message.Body == null)
         {
@@ -55,19 +60,20 @@ internal class MaelstromNode(IReceiver receiver, ISender sender) : BackgroundSer
         message.DeserializeAs<Init>();
         NodeId = ((Init)message.Body).NodeId;
         NodeIds = ((Init)message.Body).NodeIds;
-        Console.WriteLine($"Node initialized. Node ID: {NodeId}");
+        logger.LogInformation("Node initialized. Node ID: {NodeId}", NodeId);
         await ReplyAsync(message, new InitOk());
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        await _sender.SendAsync("Goodbye!");
+        logger.LogInformation("Stopping...");
         await base.StopAsync(cancellationToken);
     }
 
     private async Task<Message?> RecvAsync()
     {
         var rawMessage = await _receiver.RecvAsync();
+        logger.LogDebug("Received message: {RawMessage}", rawMessage);
         if (rawMessage == null)
         {
             return null;
@@ -77,9 +83,9 @@ internal class MaelstromNode(IReceiver receiver, ISender sender) : BackgroundSer
         {
             return JsonSerializer.Deserialize<Message>(rawMessage);
         }
-        catch (JsonException e)
+        catch (JsonException ex)
         {
-            Console.WriteLine($"Error deserializing message: {e.Message}");
+            logger.LogError(ex, "Error deserializing message");
             return null;
         }
     }
@@ -88,7 +94,9 @@ internal class MaelstromNode(IReceiver receiver, ISender sender) : BackgroundSer
     {
         body.MsgId = _msgId;
         var message = new Message(NodeId, destination, body);
-        await _sender.SendAsync(message.Serialize());
+        var rawMessage = message.Serialize();
+        logger.LogDebug("Sending message: {RawMessage}", rawMessage);
+        await _sender.SendAsync(rawMessage);
         _msgId++;
     }
 

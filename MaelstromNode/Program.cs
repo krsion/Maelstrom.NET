@@ -11,6 +11,7 @@ class Program
     static async Task Main(string[] args)
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+        //builder.Logging.AddConsole();
         builder.Services.AddHostedService<EchoServer>();
         builder.Services.AddSingleton<IReceiver, StdinReceiver>();
         builder.Services.AddSingleton<ISender, StdoutSender>();
