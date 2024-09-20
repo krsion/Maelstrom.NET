@@ -2,6 +2,7 @@
 using MaelstromNode.Models;
 using MaelstromNode.Models.MessageBodies;
 using Microsoft.Extensions.Hosting;
+using System.Reflection;
 using System.Text.Json;
 
 namespace MaelstromNode;
@@ -13,7 +14,10 @@ internal class MaelstromNode(IReceiver receiver, ISender sender) : BackgroundSer
     public string NodeId = "";
     public string[] NodeIds = Array.Empty<string>();
     private int _msgId = 0;
-    private Dictionary<string, Func<MessageBody, Task>> _message_handlers = [];
+    private Dictionary<string, Func<MessageBody, Task>> _message_handlers => GetType()
+            .GetMethods()
+            .Where(m => m.GetCustomAttributes().OfType<MaelstromHandlerAttribute>().Any())
+            .ToDictionary(m => m.GetCustomAttribute<MaelstromHandlerAttribute>()!.MessageType, m => (Func<MessageBody, Task>)m.CreateDelegate(typeof(Func<MessageBody, Task>), this));
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -39,7 +43,7 @@ internal class MaelstromNode(IReceiver receiver, ISender sender) : BackgroundSer
     private async Task InitAsync()
     {
         var message = await RecvAsync();
-        if (message == null ||  message.Body == null)
+        if (message == null || message.Body == null)
         {
             throw new Exception("Failed to receive init message");
         }
