@@ -1,8 +1,6 @@
 ﻿using MaelstromNode.Interfaces;
 using MaelstromNode.Models;
 using MaelstromNode.Models.MessageBodies;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Text.Json;
 
@@ -14,9 +12,9 @@ internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, 
     private readonly IReceiver _receiver = receiver;
     private readonly ISender _sender = sender;
     public string NodeId = "";
-    public string[] NodeIds = Array.Empty<string>();
+    public string[] NodeIds = [];
     private int _msgId = 0;
-    private Dictionary<string, Func<Message, Task>> _message_handlers => GetType()
+    private Dictionary<string, Func<Message, Task>> MessageHandlers => GetType()
             .GetMethods()
             .Where(m => m.GetCustomAttributes().OfType<MaelstromHandlerAttribute>().Any())
             .ToDictionary(m => m.GetCustomAttribute<MaelstromHandlerAttribute>()!.MessageType, m => (Func<Message, Task>)m.CreateDelegate(typeof(Func<Message, Task>), this));
@@ -31,7 +29,7 @@ internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, 
             if (message != null)
             {
                 logger.LogInformation("Received message of type: {MessageType}", message.Body.Type);
-                if (_message_handlers.TryGetValue(message.Body.Type, out var handler))
+                if (MessageHandlers.TryGetValue(message.Body.Type, out var handler))
                 {
                     await handler(message);
                 }
