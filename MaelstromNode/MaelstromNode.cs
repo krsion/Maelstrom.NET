@@ -14,10 +14,10 @@ internal class MaelstromNode(IReceiver receiver, ISender sender) : BackgroundSer
     public string NodeId = "";
     public string[] NodeIds = Array.Empty<string>();
     private int _msgId = 0;
-    private Dictionary<string, Func<MessageBody, Task>> _message_handlers => GetType()
+    private Dictionary<string, Func<Message, Task>> _message_handlers => GetType()
             .GetMethods()
             .Where(m => m.GetCustomAttributes().OfType<MaelstromHandlerAttribute>().Any())
-            .ToDictionary(m => m.GetCustomAttribute<MaelstromHandlerAttribute>()!.MessageType, m => (Func<MessageBody, Task>)m.CreateDelegate(typeof(Func<MessageBody, Task>), this));
+            .ToDictionary(m => m.GetCustomAttribute<MaelstromHandlerAttribute>()!.MessageType, m => (Func<Message, Task>)m.CreateDelegate(typeof(Func<Message, Task>), this));
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -30,7 +30,7 @@ internal class MaelstromNode(IReceiver receiver, ISender sender) : BackgroundSer
                 Console.WriteLine($"Received message of type: {message.Body.Type}");
                 if (_message_handlers.TryGetValue(message.Body.Type, out var handler))
                 {
-                    await handler(message.Body);
+                    await handler(message);
                 }
                 else
                 {

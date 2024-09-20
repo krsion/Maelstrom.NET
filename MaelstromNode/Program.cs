@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using MaelstromNode.Interfaces;
+using MaelstromNode.Workloads;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -10,7 +11,7 @@ class Program
     static async Task Main(string[] args)
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-        builder.Services.AddHostedService<MaelstromNode>();
+        builder.Services.AddHostedService<EchoServer>();
         builder.Services.AddSingleton<IReceiver, StdinReceiver>();
         builder.Services.AddSingleton<ISender, StdoutSender>();
 
