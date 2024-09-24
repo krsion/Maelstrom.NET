@@ -5,7 +5,8 @@ namespace MaelstromNode
     internal class StdoutSender : ISender
     {
         private readonly StreamWriter _stream;
-        public StdoutSender() {
+        public StdoutSender()
+        {
             var outputStream = Console.OpenStandardOutput();
             _stream = new StreamWriter(outputStream);
             _stream.AutoFlush = true;
@@ -15,5 +16,7 @@ namespace MaelstromNode
         {
             await _stream.WriteLineAsync(message);
         }
+
+        public void Dispose() => _stream.Dispose();
     }
 }

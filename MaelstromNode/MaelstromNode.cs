@@ -22,10 +22,10 @@ internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("Starting...");
-        await InitAsync();
+        await InitAsync(stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
         {
-            var message = await RecvAsync();
+            var message = await RecvAsync(stoppingToken);
             if (message != null)
             {
                 logger.LogInformation("Received message of type: {MessageType}", message.Body.Type);
@@ -39,13 +39,17 @@ internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, 
                     await ErrorAsync(message, ErrorCodes.NotSupported, $"Message type {message.Body.Type} not supported");
                 }
             }
+            else
+            {
+                await Task.Delay(1000, stoppingToken);
+            }
         }
     }
 
-    private async Task InitAsync()
+    private async Task InitAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation("Awaiting init message");
-        var message = await RecvAsync();
+        var message = await RecvAsync(cancellationToken);
         if (message == null || message.Body == null)
         {
             throw new Exception("Failed to receive init message");
@@ -65,12 +69,23 @@ internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation("Stopping...");
+        _sender.Dispose();
+        _receiver.Dispose();
         await base.StopAsync(cancellationToken);
     }
 
-    private async Task<Message?> RecvAsync()
+    private async Task<Message?> RecvAsync(CancellationToken? cancellationToken = null)
     {
-        var rawMessage = await _receiver.RecvAsync();
+        string? rawMessage;
+        if (cancellationToken != null)
+        {
+            rawMessage = await _receiver.RecvAsync(cancellationToken.Value);
+        }
+        else
+        {
+            rawMessage = await _receiver.RecvAsync();
+        }
+
         logger.LogDebug("Received message: {RawMessage}", rawMessage);
         if (rawMessage == null)
         {
@@ -100,7 +115,11 @@ internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, 
 
     public async Task ReplyAsync(Message originalMessage, MessageBody body)
     {
-        body.InReplyTo = (int)originalMessage.Body.MsgId!;
+        if (originalMessage.Body.MsgId == null)
+        {
+            throw new Exception("For reply, original message must have a MsgId");
+        }
+        body.InReplyTo = (int)originalMessage.Body.MsgId;
         await SendAsync(originalMessage.Src, body);
     }
 

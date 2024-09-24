@@ -1,6 +1,6 @@
 ﻿namespace MaelstromNode.Interfaces;
 
-internal interface ISender
+internal interface ISender : IDisposable
 {
     Task SendAsync(string message);
 }
