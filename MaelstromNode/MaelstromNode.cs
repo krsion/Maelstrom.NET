@@ -14,6 +14,10 @@ internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, 
     public string NodeId = "";
     public string[] NodeIds = [];
     private int _msgId = 0;
+    private Dictionary<int, TaskCompletionSource<Message>> _replyHandlers = [];
+    private HashSet<Task> _activeHandlers = [];
+    private SemaphoreSlim _sendLock = new(1);
+
     private Dictionary<string, Func<Message, Task>> MessageHandlers => GetType()
             .GetMethods()
             .Where(m => m.GetCustomAttributes().OfType<MaelstromHandlerAttribute>().Any())
@@ -28,21 +32,42 @@ internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, 
             var message = await RecvAsync(stoppingToken);
             if (message != null)
             {
-                logger.LogInformation("Received message of type: {MessageType}", message.Body.Type);
-                if (MessageHandlers.TryGetValue(message.Body.Type, out var handler))
-                {
-                    await handler(message);
-                }
-                else
-                {
-                    logger.LogError("Message type {MessageType} not supported", message.Body.Type);
-                    await ErrorAsync(message, ErrorCodes.NotSupported, $"Message type {message.Body.Type} not supported");
-                }
+                await ProcessMessageAsync(message);
             }
             else
             {
                 await Task.Delay(1000, stoppingToken);
             }
+        }
+        logger.LogInformation("Waiting for active tasks to complete...");
+        await Task.WhenAll(_activeHandlers);
+    }
+
+    private async Task ProcessMessageAsync(Message message)
+    {
+        logger.LogInformation("Received message of type: {MessageType}", message.Body.Type);
+        if (message.Body.InReplyTo != null)
+        {
+            int replyId = (int)message.Body.InReplyTo!;
+            if (_replyHandlers.TryGetValue(replyId, out var replyTcs))
+            {
+                _replyHandlers.Remove(replyId);
+                replyTcs.SetResult(message);
+            }
+            else
+            {
+                logger.LogError("No handler found for reply message with id {ReplyId}", replyId);
+            }
+        }
+        else if (MessageHandlers.TryGetValue(message.Body.Type, out var handler))
+        {
+            var hTask = handler(message);
+            _activeHandlers.Add(hTask);
+        }
+        else
+        {
+            logger.LogError("Message type {MessageType} not supported", message.Body.Type);
+            await ErrorAsync(message, ErrorCodes.NotSupported, $"Message type {message.Body.Type} not supported");
         }
     }
 
@@ -105,12 +130,20 @@ internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, 
 
     public async Task SendAsync(string destination, MessageBody body)
     {
-        body.MsgId = _msgId;
-        var message = new Message(NodeId, destination, body);
-        var rawMessage = message.Serialize();
-        logger.LogDebug("Sending message: {RawMessage}", rawMessage);
-        await _sender.SendAsync(rawMessage);
-        _msgId++;
+        await _sendLock.WaitAsync();
+        try
+        {
+            body.MsgId = _msgId;
+            var message = new Message(NodeId, destination, body);
+            var rawMessage = message.Serialize();
+            logger.LogDebug("Sending message: {RawMessage}", rawMessage);
+            await _sender.SendAsync(rawMessage);
+            _msgId++;
+        }
+        finally
+        {
+            _sendLock.Release();
+        }
     }
 
     public async Task ReplyAsync(Message originalMessage, MessageBody body)
@@ -127,5 +160,13 @@ internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, 
     {
         var body = new ErrorBody(errorCode, errorMessage);
         await ReplyAsync(originalMessage, body);
+    }
+
+    public async Task<Message> RpcAsync(string destination, MessageBody body)
+    {
+        var tcs = new TaskCompletionSource<Message>();
+        _replyHandlers.Add(_msgId, tcs);
+        await SendAsync(destination, body);
+        return await tcs.Task;
     }
 }

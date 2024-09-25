@@ -17,8 +17,22 @@ internal class BroadcastService(ILogger<BroadcastService> logger, IReceiver rece
         message.DeserializeAs<Broadcast>();
         var broadcastMessage = ((Broadcast)message.Body).BroadcastMessage;
         logger.LogInformation("Received broadcast message: {BroadcastMessage}", broadcastMessage);
-        _broadcastMessages.Add(broadcastMessage);
         await ReplyAsync(message, new BroadcastOk());
+        if (_broadcastMessages.Contains(broadcastMessage))
+        {
+            logger.LogInformation("Message already seen, ignoring broadcast");
+        }
+        else
+        {
+            var nextHops = GetNextHops(message);
+            if (nextHops.Count > 0)
+            {
+                logger.LogInformation("Broadcasting message to next hops {nextHops}", nextHops);
+                await Task.WhenAll(nextHops.Select(n => RpcAsync(n, new Broadcast(broadcastMessage))));
+            }
+            logger.LogInformation("Message broadcast successfully");
+            _broadcastMessages.Add(broadcastMessage);
+        }
     }
 
     [MaelstromHandler(Read.ReadType)]
@@ -43,5 +57,11 @@ internal class BroadcastService(ILogger<BroadcastService> logger, IReceiver rece
         }
         _topology = topology;
         await ReplyAsync(message, new TopologyOk());
+    }
+
+    private IList<string> GetNextHops(Message message)
+    {
+        // Return neighbors excluding message source to avoid reflection.
+        return _topology[NodeId].Where(n => n != message.Src).ToList();
     }
 }
