@@ -20,6 +20,7 @@ internal class MaelstromNode : BackgroundService
     private readonly Dictionary<int, TaskCompletionSource<Message>> _replyHandlers = [];
     private readonly HashSet<Task> _activeHandlers = [];
     private readonly SemaphoreSlim _sendLock = new(1);
+    private readonly SemaphoreSlim _replyHandlersLock = new(1);
 
     public MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, ISender sender)
     {
@@ -59,14 +60,14 @@ internal class MaelstromNode : BackgroundService
         if (message.Body.InReplyTo != null)
         {
             int replyId = (int)message.Body.InReplyTo!;
-            if (_replyHandlers.TryGetValue(replyId, out var replyTcs))
+            var replyTcs = await GetReplyHandler(replyId);
+            if (replyTcs == null)
             {
-                _replyHandlers.Remove(replyId);
-                replyTcs.SetResult(message);
+                logger.LogError("No handler found for reply message with id {ReplyId}", replyId);
             }
             else
             {
-                logger.LogError("No handler found for reply message with id {ReplyId}", replyId);
+                replyTcs.SetResult(message);
             }
         }
         else if (_messageHandlers.TryGetValue(message.Body.Type, out var handler))
@@ -174,9 +175,58 @@ internal class MaelstromNode : BackgroundService
 
     public async Task<Message> RpcAsync(string destination, MessageBody body)
     {
+        Task<Message> replyTask;
+        await _sendLock.WaitAsync();
+        try
+        {
+            body.MsgId = _msgId;
+            var message = new Message(NodeId, destination, body);
+            var rawMessage = message.Serialize();
+            replyTask = (await AddReplyHander(_msgId)).Task;
+            logger.LogDebug("Sending RPC message: {RawMessage}", rawMessage);
+            await _sender.SendAsync(rawMessage);
+            _msgId++;
+        }
+        finally
+        {
+            _sendLock.Release();
+        }
+
+        return await replyTask;
+    }
+
+    private async Task<TaskCompletionSource<Message>> AddReplyHander(int msgId)
+    {
         var tcs = new TaskCompletionSource<Message>();
-        _replyHandlers.Add(_msgId, tcs);
-        await SendAsync(destination, body);
-        return await tcs.Task;
+        await _replyHandlersLock.WaitAsync();
+        try
+        {
+            _replyHandlers.Add(msgId, tcs);
+        }
+        finally
+        {
+            _replyHandlersLock.Release();
+        }
+
+        return tcs;
+    }
+
+    private async Task<TaskCompletionSource<Message>?> GetReplyHandler(int msgId)
+    {
+        TaskCompletionSource<Message>? tcs;
+        await _replyHandlersLock.WaitAsync();
+        try
+        {
+            if (_replyHandlers.TryGetValue(msgId, out tcs))
+            {
+                _replyHandlers.Remove(msgId);
+            }
+        }
+        finally
+        {
+            _replyHandlersLock.Release();
+        }
+
+        return tcs;
     }
 }
