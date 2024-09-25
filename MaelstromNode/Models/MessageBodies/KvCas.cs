@@ -9,12 +9,13 @@ internal class KvCas<T, U> : MessageBody
 
     [JsonConstructor]
     [SetsRequiredMembers]
-    public KvCas(T key, U from, U to) : base()
+    public KvCas(T key, U from, U to, bool createIfNotExists = false) : base()
     {
         Type = CasType;
         Key = key;
         From = from;
         To = to;
+        CreateIfNotExists = createIfNotExists;
     }
 
     [JsonPropertyName("key")]
@@ -25,4 +26,7 @@ internal class KvCas<T, U> : MessageBody
 
     [JsonPropertyName("to")]
     public required U To { get; set; }
+
+    [JsonPropertyName("create_if_not_exists")]
+    public bool CreateIfNotExists { get; set; }
 }

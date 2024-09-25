@@ -3,7 +3,7 @@ using MaelstromNode.Interfaces;
 using MaelstromNode.Workloads;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<BroadcastService>();
+builder.Services.AddHostedService<Counter>();
 builder.Services.AddSingleton<IReceiver, StdinReceiver>();
 builder.Services.AddSingleton<ISender, StdoutSender>();
 

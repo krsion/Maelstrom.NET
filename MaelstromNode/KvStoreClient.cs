@@ -53,10 +53,10 @@ internal class KvStoreClient(MaelstromNode node, ILogger<MaelstromNode> logger, 
         }
     }
 
-    public async Task CasAsync<T, U>(T key, U from, U to)
+    public async Task CasAsync<T, U>(T key, U from, U to, bool createIfNotExists = false)
     {
         logger.LogDebug("CAS key {key} from {from} to {to}", key, from, to);
-        KvCas<T, U> cas = new(key, from, to);
+        KvCas<T, U> cas = new(key, from, to, createIfNotExists);
         var response = await _node.RpcAsync(_serviceName, cas);
         switch (response.Body.Type)
         {
