@@ -6,22 +6,32 @@ using System.Text.Json;
 
 namespace MaelstromNode;
 
-internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, ISender sender) : BackgroundService
+internal class MaelstromNode : BackgroundService
 {
-    protected readonly ILogger logger = logger;
-    private readonly IReceiver _receiver = receiver;
-    private readonly ISender _sender = sender;
+    protected readonly ILogger<MaelstromNode> logger;
+    private readonly IReceiver _receiver;
+    private readonly ISender _sender;
     public string NodeId = "";
     public string[] NodeIds = [];
-    private int _msgId = 0;
-    private Dictionary<int, TaskCompletionSource<Message>> _replyHandlers = [];
-    private HashSet<Task> _activeHandlers = [];
-    private SemaphoreSlim _sendLock = new(1);
+    protected readonly KvStoreClient SeqKvStoreClient;
 
-    private Dictionary<string, Func<Message, Task>> MessageHandlers => GetType()
+    private int _msgId = 0;
+    private readonly Dictionary<string, Func<Message, Task>> _messageHandlers;
+    private readonly Dictionary<int, TaskCompletionSource<Message>> _replyHandlers = [];
+    private readonly HashSet<Task> _activeHandlers = [];
+    private readonly SemaphoreSlim _sendLock = new(1);
+
+    public MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, ISender sender)
+    {
+        this.logger = logger;
+        _receiver = receiver;
+        _sender = sender;
+        _messageHandlers = GetType()
             .GetMethods()
             .Where(m => m.GetCustomAttributes().OfType<MaelstromHandlerAttribute>().Any())
             .ToDictionary(m => m.GetCustomAttribute<MaelstromHandlerAttribute>()!.MessageType, m => (Func<Message, Task>)m.CreateDelegate(typeof(Func<Message, Task>), this));
+        SeqKvStoreClient = new(this, this.logger, "seq-kv");
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -59,7 +69,7 @@ internal class MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, 
                 logger.LogError("No handler found for reply message with id {ReplyId}", replyId);
             }
         }
-        else if (MessageHandlers.TryGetValue(message.Body.Type, out var handler))
+        else if (_messageHandlers.TryGetValue(message.Body.Type, out var handler))
         {
             var hTask = handler(message);
             _activeHandlers.Add(hTask);
