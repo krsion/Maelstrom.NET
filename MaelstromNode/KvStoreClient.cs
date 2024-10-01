@@ -65,16 +65,12 @@ internal class KvStoreClient(MaelstromNode node, ILogger<MaelstromNode> logger, 
                 var error = (ErrorBody)response.Body;
                 logger.LogDebug("Error setting key {key}: {errorCode} {errorText}", key, error.ErrorCode, error.ErrorText);
 
-                switch (error.ErrorCode)
+                throw error.ErrorCode switch
                 {
-                    case Models.ErrorCodes.KeyDoesNotExist:
-                        throw new KvStoreKeyNotFoundException($"Key {key} does not exist");
-                    case Models.ErrorCodes.PreconditionFailed:
-                        throw new KvStoreCasPreconditionFailed($"CAS precondition failed for key {key}");
-                    default:
-                        throw new KvStoreException($"Error setting key {key}: {error.ErrorText}");
-                }
-
+                    Models.ErrorCodes.KeyDoesNotExist => new KvStoreKeyNotFoundException($"Key {key} does not exist"),
+                    Models.ErrorCodes.PreconditionFailed => new KvStoreCasPreconditionFailed($"CAS precondition failed for key {key}"),
+                    _ => new KvStoreException($"Error setting key {key}: {error.ErrorText}"),
+                };
             case KvCasOk.CasOkType:
                 logger.LogDebug("CAS key {key} from {from} to {to} succeeded", key, from, to);
                 break;

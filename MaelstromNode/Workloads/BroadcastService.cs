@@ -8,7 +8,7 @@ namespace MaelstromNode.Workloads;
 internal class BroadcastService(ILogger<BroadcastService> logger, IReceiver receiver, ISender sender) : MaelstromNode(logger, receiver, sender)
 {
     protected new ILogger<BroadcastService> logger = logger;
-    private HashSet<int> _broadcastMessages = [];
+    private readonly HashSet<int> _broadcastMessages = [];
     private Dictionary<string, string[]> _topology = [];
 
     [MaelstromHandler(Broadcast.BroadcastType)]
@@ -40,7 +40,7 @@ internal class BroadcastService(ILogger<BroadcastService> logger, IReceiver rece
     {
         message.DeserializeAs<Read>();
         logger.LogInformation("Received read request");
-        await ReplyAsync(message, new ReadOk(_broadcastMessages.ToArray()));
+        await ReplyAsync(message, new ReadOk([.. _broadcastMessages]));
     }
 
     [MaelstromHandler(Topology.TopologyType)]
@@ -59,7 +59,7 @@ internal class BroadcastService(ILogger<BroadcastService> logger, IReceiver rece
         await ReplyAsync(message, new TopologyOk());
     }
 
-    private IList<string> GetNextHops(Message message)
+    private List<string> GetNextHops(Message message)
     {
         // Return neighbors excluding message source to avoid reflection.
         return _topology[NodeId].Where(n => n != message.Src).ToList();
