@@ -7,11 +7,9 @@ namespace MaelstromNode.Workloads;
 class KafkaLog(ILogger<KafkaLog> logger, IReceiver receiver, ISender sender) : MaelstromNode(logger, receiver, sender)
 {
     private const int _maxReturnedMessages = 10;
+    private const int _maxAttempts = 10;
     protected new ILogger<KafkaLog> logger = logger;
-    private readonly Dictionary<string, List<int>> _log = [];
-    private readonly SemaphoreSlim _logLock = new(1);
-    private readonly Dictionary<string, int> _committedOffsets = [];
-    private readonly SemaphoreSlim _committedOffsetsLock = new(1);
+    private readonly SemaphoreSlim _offsetLock = new(1);
 
     [MaelstromHandler(Send.SendType)]
     public async Task HandleSend(Message message)
@@ -19,22 +17,9 @@ class KafkaLog(ILogger<KafkaLog> logger, IReceiver receiver, ISender sender) : M
         message.DeserializeAs<Send>();
         var send = (Send)message.Body;
         logger.LogInformation("Received send request: {Key} {Message}", send.Key, send.Message);
-        await _logLock.WaitAsync();
-        try
-        {
-            if (!_log.TryGetValue(send.Key, out List<int>? value))
-            {
-                value = [];
-                _log[send.Key] = value;
-            }
-
-            value.Add(send.Message);
-        }
-        finally
-        {
-            _logLock.Release();
-        }
-        await ReplyAsync(message, new SendOk(GetLatestOffset(send.Key)));
+        var offset = await IncrementOffset(send.Key);
+        await WriteLog(send.Key, offset, send.Message);
+        await ReplyAsync(message, new SendOk(offset));
     }
 
     [MaelstromHandler(Poll.PollType)]
@@ -43,20 +28,10 @@ class KafkaLog(ILogger<KafkaLog> logger, IReceiver receiver, ISender sender) : M
         message.DeserializeAs<Poll>();
         var poll = (Poll)message.Body;
         logger.LogInformation("Received poll request: {Offsets}", poll.Offsets);
-        Dictionary<string, List<List<int>>> messages;
-        await _logLock.WaitAsync();
-        try
-        {
-            messages = _log
-                .Where(kv => poll.Offsets.ContainsKey(kv.Key))
-                .Select(kv => (kv.Key, GetMessagesFromOffset(kv.Key, poll.Offsets[kv.Key])))
-                .ToDictionary();
-        }
-        finally
-        {
-            _logLock.Release();
-        }
-
+        Dictionary<string, List<List<int>>> messages = [];
+        await Task.WhenAll(
+            poll.Offsets
+            .Select(async kv => messages[kv.Key] = await GetLogs(kv.Key, kv.Value)));
         await ReplyAsync(message, new PollOk(messages));
     }
 
@@ -66,18 +41,9 @@ class KafkaLog(ILogger<KafkaLog> logger, IReceiver receiver, ISender sender) : M
         message.DeserializeAs<CommitOffsets>();
         var commitOffsets = (CommitOffsets)message.Body;
         logger.LogInformation("Received commit offsets request: {Offsets}", commitOffsets.Offsets);
-        await _committedOffsetsLock.WaitAsync();
-        try
-        {
-            foreach (var kv in commitOffsets.Offsets)
-            {
-                _committedOffsets[kv.Key] = kv.Value;
-            }
-        }
-        finally
-        {
-            _committedOffsetsLock.Release();
-        }
+        await Task.WhenAll(
+            commitOffsets.Offsets
+            .Select(kv => UpdateCommittedOffset(kv.Key, kv.Value)));
 
         await ReplyAsync(message, new CommitOffsetsOk());
     }
@@ -88,28 +54,136 @@ class KafkaLog(ILogger<KafkaLog> logger, IReceiver receiver, ISender sender) : M
         message.DeserializeAs<ListCommittedOffsets>();
         var listCommittedOffsets = (ListCommittedOffsets)message.Body;
         logger.LogInformation("Received list committed offsets request: {Keys}", listCommittedOffsets.Keys);
-        Dictionary<string, int> committedOffsets;
-        await _committedOffsetsLock.WaitAsync();
-        try
-        {
-            committedOffsets = listCommittedOffsets.Keys
-                .Where(_committedOffsets.ContainsKey)
-                .Select(k => new KeyValuePair<string, int>(k, _committedOffsets[k]))
-                .ToDictionary();
-        }
-        finally
-        {
-            _committedOffsetsLock.Release();
-        }
+        Dictionary<string, int> committedOffsets = (await Task.WhenAll(
+            listCommittedOffsets.Keys
+                .Select(async k => new KeyValuePair<string, int>(k, await GetCommittedOffset(k)))))
+            .ToDictionary();
 
         await ReplyAsync(message, new ListCommittedOffsetsOk(committedOffsets));
     }
 
-    private List<List<int>> GetMessagesFromOffset(string key, int offset) => _log[key]
-        .Select((v, ix) => new List<int> { ix, v })
-        .Skip(offset)
-        .Take(_maxReturnedMessages)
-        .ToList();
+    private static string GetOffsetKey(string key) => $"offsets/{key}";
 
-    private int GetLatestOffset(string key) => _log[key].Count - 1;
+    private async Task<int> GetLatestOffset(string key) => await GetCounter(GetOffsetKey(key));
+
+    private async Task<int> IncrementOffset(string key)
+    {
+        await _offsetLock.WaitAsync();
+        try
+        {
+            return await IncrementCounter(GetOffsetKey(key));
+        }
+        finally
+        {
+            _offsetLock.Release();
+        }
+    }
+
+    private static string GetCommittedKey(string key) => $"committed/{key}";
+
+    private async Task<int> GetCommittedOffset(string key) => await GetCounter(GetCommittedKey(key));
+
+    private async Task UpdateCommittedOffset(string key, int value)
+    {
+        string committedKey = GetCommittedKey(key);
+        int attempts = 1;
+        while (attempts <= _maxAttempts)
+        {
+            logger.LogDebug("Get counter {key}, attempt {attempts}", committedKey, attempts);
+            var offset = await GetCounter(committedKey);
+            if (value <= offset)
+            {
+                logger.LogDebug("New offset {value} is not greater than current offset {offset}, skipping", value, offset);
+                return;
+            }
+
+            try
+            {
+                await LinKvStoreClient.CasAsync(committedKey, offset, value, createIfNotExists: true);
+            }
+            catch (KvStoreCasPreconditionFailed)
+            {
+                logger.LogWarning("CAS failed, waiting and retrying");
+                await Task.Delay(10 + (new Random()).Next(-2, 2));
+                attempts++;
+                continue;
+            }
+
+            logger.LogDebug("Increment succeeded, new {key} = {offset}", key, committedKey);
+            return;
+        }
+
+        logger.LogError("Increment offset failed after {attempts} attempts", _maxAttempts);
+        throw new Exception("Increment offset failed after max attempts");
+    }
+
+    private async Task<int> GetCounter(string key)
+    {
+        try
+        {
+            return await LinKvStoreClient.ReadAsync<string, int>(key);
+        }
+        catch (KvStoreKeyNotFoundException)
+        {
+            return 0;
+        }
+    }
+    private async Task<int> IncrementCounter(string key)
+    {
+        int attempts = 1;
+        while (attempts <= _maxAttempts)
+        {
+            logger.LogDebug("Get counter {key}, attempt {attempts}", key, attempts);
+            var offset = await GetCounter(key);
+            var newOffset = offset + 1;
+            try
+            {
+                await LinKvStoreClient.CasAsync(key, offset, newOffset, createIfNotExists: true);
+            }
+            catch (KvStoreCasPreconditionFailed)
+            {
+                logger.LogWarning("CAS failed, waiting and retrying");
+                await Task.Delay(10 + (new Random()).Next(-2, 2));
+                attempts++;
+                continue;
+            }
+
+            logger.LogDebug("Increment succeeded, new {key} = {offset}", key, newOffset);
+            return newOffset;
+        }
+
+        logger.LogError("Increment offset failed after {attempts} attempts", _maxAttempts);
+        throw new Exception("Increment offset failed after max attempts");
+    }
+
+    private static string GetLogKey(string key, int offset) => $"logs/{key}/{offset}";
+
+    private async Task WriteLog(string key, int offset, int message)
+    {
+        logger.LogDebug("Writing log: {Key} {Offset} {Message}", key, offset, message);
+        await SeqKvStoreClient.WriteAsync(GetLogKey(key, offset), message);
+    }
+
+    private async Task<List<List<int>>> GetLogs(string key, int offset)
+    {
+        var maxOffset = await GetLatestOffset(key);
+        var logs = new List<List<int>>();
+        while (logs.Count < _maxReturnedMessages && offset <= maxOffset)
+        {
+            try
+            {
+                var log = await SeqKvStoreClient.ReadAsync<string, int>(GetLogKey(key, offset));
+                logs.Add([offset, log]);
+                offset++;
+            }
+            catch (KvStoreKeyNotFoundException)
+            {
+                logger.LogWarning("Log at offset {offset} not found, skipping", offset);
+                offset++;
+                continue;
+            }
+        }
+
+        return logs;
+    }
 }

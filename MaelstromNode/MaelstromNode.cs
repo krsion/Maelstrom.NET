@@ -14,6 +14,7 @@ internal class MaelstromNode : BackgroundService
     public string NodeId = "";
     public string[] NodeIds = [];
     protected readonly KvStoreClient SeqKvStoreClient;
+    protected readonly KvStoreClient LinKvStoreClient;
 
     private int _msgId = 0;
     private readonly Dictionary<string, Func<Message, Task>> _messageHandlers;
@@ -32,6 +33,7 @@ internal class MaelstromNode : BackgroundService
             .Where(m => m.GetCustomAttributes().OfType<MaelstromHandlerAttribute>().Any())
             .ToDictionary(m => m.GetCustomAttribute<MaelstromHandlerAttribute>()!.MessageType, m => (Func<Message, Task>)m.CreateDelegate(typeof(Func<Message, Task>), this));
         SeqKvStoreClient = new(this, this.logger, "seq-kv");
+        LinKvStoreClient = new(this, this.logger, "lin-kv");
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
