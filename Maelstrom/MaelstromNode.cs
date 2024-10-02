@@ -1,14 +1,13 @@
 ﻿using Maelstrom.Interfaces;
 using Maelstrom.Models;
 using Maelstrom.Models.MessageBodies;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Text.Json;
 
 namespace Maelstrom;
 
-public class MaelstromNode : IMaelstromNode
+internal class MaelstromNode : IMaelstromNode
 {
     private readonly ILogger<MaelstromNode> logger;
     private readonly IReceiver _receiver;
@@ -38,18 +37,6 @@ public class MaelstromNode : IMaelstromNode
         _seqKvStoreClient = new(this, this.logger, "seq-kv");
         _linKvStoreClient = new(this, this.logger, "lin-kv");
     }
-
-    public static IServiceCollection SetupDependencies<RecT, SendT>(IServiceCollection services)
-        where RecT : class, IReceiver
-        where SendT : class, ISender
-    {
-        services.AddSingleton<IReceiver, RecT>();
-        services.AddSingleton<ISender, SendT>();
-        services.AddSingleton<IMaelstromNode, MaelstromNode>();
-        return services;
-    }
-
-    public static IServiceCollection SetupDependencies(IServiceCollection services) => SetupDependencies<StdinReceiver, StdoutSender>(services);
 
     public void AddMessageHandlers<T>(T workload) where T : class
     {
