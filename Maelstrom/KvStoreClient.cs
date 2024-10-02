@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Maelstrom;
 
-public class KvStoreClient(IMaelstromNode node, ILogger<IMaelstromNode> logger, string serviceName)
+internal class KvStoreClient(IMaelstromNode node, ILogger<IMaelstromNode> logger, string serviceName) : IKvStoreClient
 {
     private readonly string _serviceName = serviceName;
     private readonly ILogger<IMaelstromNode> logger = logger;

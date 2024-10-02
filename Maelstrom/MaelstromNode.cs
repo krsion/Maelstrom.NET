@@ -26,8 +26,8 @@ internal class MaelstromNode : IMaelstromNode
 
     public string NodeId => _nodeId;
     public string[] NodeIds => _nodeIds;
-    public KvStoreClient SeqKvStoreClient => _seqKvStoreClient;
-    public KvStoreClient LinKvStoreClient => _linKvStoreClient;
+    public IKvStoreClient SeqKvStoreClient => _seqKvStoreClient;
+    public IKvStoreClient LinKvStoreClient => _linKvStoreClient;
 
     public MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, ISender sender)
     {
