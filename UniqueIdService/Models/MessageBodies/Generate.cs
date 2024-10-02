@@ -1,4 +1,4 @@
-﻿using MaelstromNode.Models;
+﻿using Maelstrom.Models;
 
 namespace UniqueIdService.Models.MessageBodies;
 

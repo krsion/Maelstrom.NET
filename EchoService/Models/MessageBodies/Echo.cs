@@ -1,4 +1,4 @@
-﻿using MaelstromNode.Models;
+﻿using Maelstrom.Models;
 using System.Text.Json.Serialization;
 
 namespace EchoService.Models.MessageBodies;

@@ -1,4 +1,4 @@
-﻿namespace MaelstromNode.Models;
+﻿namespace Maelstrom.Models;
 
 public enum ErrorCodes
 {

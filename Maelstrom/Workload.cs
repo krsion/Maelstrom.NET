@@ -1,8 +1,8 @@
-﻿using MaelstromNode.Interfaces;
+﻿using Maelstrom.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace MaelstromNode;
+namespace Maelstrom;
 
 public class Workload : BackgroundService
 {

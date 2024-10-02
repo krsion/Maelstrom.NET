@@ -1,7 +1,8 @@
-﻿using MaelstromNode.Models.MessageBodies;
+﻿using Maelstrom.Models;
+using Maelstrom.Models.MessageBodies;
 using Microsoft.Extensions.Logging;
 
-namespace MaelstromNode;
+namespace Maelstrom;
 
 public class KvStoreClient(MaelstromNode node, ILogger<MaelstromNode> logger, string serviceName)
 {
@@ -19,7 +20,7 @@ public class KvStoreClient(MaelstromNode node, ILogger<MaelstromNode> logger, st
             response.DeserializeAs<ErrorBody>();
             var error = (ErrorBody)response.Body;
             logger.LogDebug("Error reading key {key}: {errorCode} {errorText}", key, error.ErrorCode, error.ErrorText);
-            if (error.ErrorCode == Models.ErrorCodes.KeyDoesNotExist)
+            if (error.ErrorCode == ErrorCodes.KeyDoesNotExist)
             {
                 throw new KvStoreKeyNotFoundException($"Key {key} does not exist");
             }
@@ -68,8 +69,8 @@ public class KvStoreClient(MaelstromNode node, ILogger<MaelstromNode> logger, st
 
                 throw error.ErrorCode switch
                 {
-                    Models.ErrorCodes.KeyDoesNotExist => new KvStoreKeyNotFoundException($"Key {key} does not exist"),
-                    Models.ErrorCodes.PreconditionFailed => new KvStoreCasPreconditionFailed($"CAS precondition failed for key {key}"),
+                    ErrorCodes.KeyDoesNotExist => new KvStoreKeyNotFoundException($"Key {key} does not exist"),
+                    ErrorCodes.PreconditionFailed => new KvStoreCasPreconditionFailed($"CAS precondition failed for key {key}"),
                     _ => new KvStoreException($"Error setting key {key}: {error.ErrorText}"),
                 };
             case KvCasOk.CasOkType:

@@ -1,4 +1,4 @@
-﻿namespace MaelstromNode.Interfaces;
+﻿namespace Maelstrom.Interfaces;
 
 public interface ISender : IDisposable
 {

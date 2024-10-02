@@ -1,6 +1,6 @@
-﻿using MaelstromNode.Interfaces;
+﻿using Maelstrom.Interfaces;
 
-namespace MaelstromNode
+namespace Maelstrom
 {
     internal class StdoutSender : ISender
     {

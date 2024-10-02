@@ -5,15 +5,15 @@ VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EchoService", "EchoService\EchoService.csproj", "{4882EC97-418C-4D7A-85A2-EDE5562215C6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaelstromNode", "MaelstromNode\MaelstromNode.csproj", "{F233EEDA-80A9-4E84-AAF6-19F302516FAE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Maelstrom", "Maelstrom\Maelstrom.csproj", "{F233EEDA-80A9-4E84-AAF6-19F302516FAE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BroadcastService", "BroadcastService\BroadcastService.csproj", "{AC1DA533-9E4E-416B-8061-036BDAA3AD44}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BroadcastService", "BroadcastService\BroadcastService.csproj", "{AC1DA533-9E4E-416B-8061-036BDAA3AD44}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniqueIdService", "UniqueIdService\UniqueIdService.csproj", "{5A6C17BF-7FEE-4D96-AC06-AE9D0997A7FE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniqueIdService", "UniqueIdService\UniqueIdService.csproj", "{5A6C17BF-7FEE-4D96-AC06-AE9D0997A7FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CounterService", "CounterService\CounterService.csproj", "{6527A757-7E82-43D2-9267-D140EA963CCB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CounterService", "CounterService\CounterService.csproj", "{6527A757-7E82-43D2-9267-D140EA963CCB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaService", "KafkaService\KafkaService.csproj", "{925717EB-FAB1-46CB-978F-8D592096F7A5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KafkaService", "KafkaService\KafkaService.csproj", "{925717EB-FAB1-46CB-978F-8D592096F7A5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workloads", "Workloads", "{CA9E0016-2D81-41E9-985B-6042B8EBA35D}"
 EndProject

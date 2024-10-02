@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace MaelstromNode.Models.MessageBodies;
+namespace Maelstrom.Models.MessageBodies;
 
 internal class KvReadOk<T> : MessageBody
 {

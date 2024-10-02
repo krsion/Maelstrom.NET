@@ -1,6 +1,6 @@
-﻿using MaelstromNode.Models;
+﻿using Maelstrom.Models;
 
-namespace MaelstromNode.Interfaces;
+namespace Maelstrom.Interfaces;
 
 public interface IMaelstromNode : IDisposable
 {

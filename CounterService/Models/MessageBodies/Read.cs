@@ -1,4 +1,4 @@
-﻿using MaelstromNode.Models;
+﻿using Maelstrom.Models;
 
 namespace CounterService.Models.MessageBodies;
 

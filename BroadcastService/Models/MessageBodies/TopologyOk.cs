@@ -1,4 +1,4 @@
-﻿using MaelstromNode.Models;
+﻿using Maelstrom.Models;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 

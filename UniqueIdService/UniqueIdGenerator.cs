@@ -1,6 +1,6 @@
-﻿using MaelstromNode;
-using MaelstromNode.Interfaces;
-using MaelstromNode.Models;
+﻿using Maelstrom;
+using Maelstrom.Interfaces;
+using Maelstrom.Models;
 using UniqueIdService.Models.MessageBodies;
 
 namespace UniqueIdService;

@@ -1,4 +1,4 @@
-﻿namespace MaelstromNode;
+﻿namespace Maelstrom;
 
 [AttributeUsage(AttributeTargets.Method)]
 public class MaelstromHandlerAttribute(string messageType) : Attribute

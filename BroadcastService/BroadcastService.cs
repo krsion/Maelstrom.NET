@@ -1,7 +1,7 @@
 ﻿using BroadcastService.Models.MessageBodies;
-using MaelstromNode;
-using MaelstromNode.Interfaces;
-using MaelstromNode.Models;
+using Maelstrom;
+using Maelstrom.Interfaces;
+using Maelstrom.Models;
 using System.Text.Json;
 
 namespace BroadcastService;

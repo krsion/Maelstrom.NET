@@ -1,7 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Maelstrom.Models;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace MaelstromNode.Models.MessageBodies;
+namespace Maelstrom.Models.MessageBodies;
 
 internal class KvWrite<T, U> : MessageBody
 {

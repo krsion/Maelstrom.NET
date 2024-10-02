@@ -1,12 +1,12 @@
-﻿using MaelstromNode.Interfaces;
-using MaelstromNode.Models;
-using MaelstromNode.Models.MessageBodies;
+﻿using Maelstrom.Interfaces;
+using Maelstrom.Models;
+using Maelstrom.Models.MessageBodies;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Text.Json;
 
-namespace MaelstromNode;
+namespace Maelstrom;
 
 public class MaelstromNode : IMaelstromNode
 {

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace MaelstromNode.Models.MessageBodies;
+namespace Maelstrom.Models.MessageBodies;
 
 public class Init : MessageBody
 {

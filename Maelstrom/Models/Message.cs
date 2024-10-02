@@ -2,7 +2,7 @@
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
-namespace MaelstromNode.Models;
+namespace Maelstrom.Models;
 
 public class Message
 {
