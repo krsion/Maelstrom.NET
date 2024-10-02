@@ -1,16 +1,15 @@
-﻿using Maelstrom.Models;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace Maelstrom.Models.MessageBodies;
+namespace Maelstrom.Models.MessageBodies.KvStore;
 
-internal class KvCasOk : MessageBody
+internal class CasOk : MessageBody
 {
     public const string CasOkType = "cas_ok";
 
     [JsonConstructor]
     [SetsRequiredMembers]
-    public KvCasOk() : base()
+    public CasOk() : base()
     {
         Type = CasOkType;
     }

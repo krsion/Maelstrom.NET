@@ -1,16 +1,15 @@
-﻿using Maelstrom.Models;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace Maelstrom.Models.MessageBodies;
+namespace Maelstrom.Models.MessageBodies.KvStore;
 
-internal class KvCas<T, U> : MessageBody
+internal class Cas<T, U> : MessageBody
 {
     public const string CasType = "cas";
 
     [JsonConstructor]
     [SetsRequiredMembers]
-    public KvCas(T key, U from, U to, bool createIfNotExists = false) : base()
+    public Cas(T key, U from, U to, bool createIfNotExists = false) : base()
     {
         Type = CasType;
         Key = key;

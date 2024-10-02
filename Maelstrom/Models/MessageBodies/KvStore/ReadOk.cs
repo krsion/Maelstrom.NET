@@ -1,15 +1,15 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace Maelstrom.Models.MessageBodies;
+namespace Maelstrom.Models.MessageBodies.KvStore;
 
-internal class KvReadOk<T> : MessageBody
+internal class ReadOk<T> : MessageBody
 {
     public const string ReadOkType = "read_ok";
 
     [JsonConstructor]
     [SetsRequiredMembers]
-    public KvReadOk(T value) : base()
+    public ReadOk(T value) : base()
     {
         Type = ReadOkType;
         Value = value;

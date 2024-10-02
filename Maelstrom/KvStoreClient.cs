@@ -1,19 +1,21 @@
-﻿using Maelstrom.Models;
+﻿using Maelstrom.Interfaces;
+using Maelstrom.Models;
 using Maelstrom.Models.MessageBodies;
+using Maelstrom.Models.MessageBodies.KvStore;
 using Microsoft.Extensions.Logging;
 
 namespace Maelstrom;
 
-public class KvStoreClient(MaelstromNode node, ILogger<MaelstromNode> logger, string serviceName)
+public class KvStoreClient(IMaelstromNode node, ILogger<IMaelstromNode> logger, string serviceName)
 {
     private readonly string _serviceName = serviceName;
-    private readonly ILogger<MaelstromNode> logger = logger;
-    private readonly MaelstromNode _node = node;
+    private readonly ILogger<IMaelstromNode> logger = logger;
+    private readonly IMaelstromNode _node = node;
 
     public async Task<U> ReadAsync<T, U>(T key)
     {
         logger.LogDebug("Reading key {key}", key);
-        KvRead<T> read = new(key);
+        Read<T> read = new(key);
         var response = await _node.RpcAsync(_serviceName, read);
         if (response.Body.Type == ErrorBody.ErrorBodyType)
         {
@@ -28,8 +30,8 @@ public class KvStoreClient(MaelstromNode node, ILogger<MaelstromNode> logger, st
             throw new KvStoreException($"Error reading key {key}: {error.ErrorText}");
         }
 
-        response.DeserializeAs<KvReadOk<U>>();
-        var readOk = (KvReadOk<U>)response.Body;
+        response.DeserializeAs<ReadOk<U>>();
+        var readOk = (ReadOk<U>)response.Body;
         logger.LogDebug("Read key {key}: {value}", key, readOk.Value);
         return readOk.Value;
     }
@@ -37,7 +39,7 @@ public class KvStoreClient(MaelstromNode node, ILogger<MaelstromNode> logger, st
     public async Task WriteAsync<T, U>(T key, U value)
     {
         logger.LogDebug("Writing key {key}: {value}", key, value);
-        KvWrite<T, U> write = new(key, value);
+        Write<T, U> write = new(key, value);
         var response = await _node.RpcAsync(_serviceName, write);
         switch (response.Body.Type)
         {
@@ -46,7 +48,7 @@ public class KvStoreClient(MaelstromNode node, ILogger<MaelstromNode> logger, st
                 var error = (ErrorBody)response.Body;
                 throw new KvStoreException($"Error writing key {key}: {error.ErrorText}");
 
-            case KvWriteOk.WriteOkType:
+            case WriteOk.WriteOkType:
                 logger.LogDebug("Wrote key {key}: {value}", key, value);
                 break;
 
@@ -58,7 +60,7 @@ public class KvStoreClient(MaelstromNode node, ILogger<MaelstromNode> logger, st
     public async Task CasAsync<T, U>(T key, U from, U to, bool createIfNotExists = false)
     {
         logger.LogDebug("CAS key {key} from {from} to {to}", key, from, to);
-        KvCas<T, U> cas = new(key, from, to, createIfNotExists);
+        Cas<T, U> cas = new(key, from, to, createIfNotExists);
         var response = await _node.RpcAsync(_serviceName, cas);
         switch (response.Body.Type)
         {
@@ -73,7 +75,7 @@ public class KvStoreClient(MaelstromNode node, ILogger<MaelstromNode> logger, st
                     ErrorCodes.PreconditionFailed => new KvStoreCasPreconditionFailed($"CAS precondition failed for key {key}"),
                     _ => new KvStoreException($"Error setting key {key}: {error.ErrorText}"),
                 };
-            case KvCasOk.CasOkType:
+            case CasOk.CasOkType:
                 logger.LogDebug("CAS key {key} from {from} to {to} succeeded", key, from, to);
                 break;
 

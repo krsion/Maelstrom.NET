@@ -1,16 +1,15 @@
-﻿using Maelstrom.Models;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace Maelstrom.Models.MessageBodies;
+namespace Maelstrom.Models.MessageBodies.KvStore;
 
-internal class KvWrite<T, U> : MessageBody
+internal class Write<T, U> : MessageBody
 {
     public const string WriteType = "write";
 
     [JsonConstructor]
     [SetsRequiredMembers]
-    public KvWrite(T key, U value) : base()
+    public Write(T key, U value) : base()
     {
         Type = WriteType;
         Key = key;
