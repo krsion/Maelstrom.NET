@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MaelstromNode": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

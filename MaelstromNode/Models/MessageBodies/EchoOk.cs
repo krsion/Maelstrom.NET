@@ -1,7 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using MaelstromNode.Models;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace MaelstromNode.Models.MessageBodies;
+namespace EchoService.Models.MessageBodies;
 
 internal class EchoOk : MessageBody
 {

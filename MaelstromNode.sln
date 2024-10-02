@@ -3,7 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaelstromNode", "MaelstromNode\MaelstromNode.csproj", "{4882EC97-418C-4D7A-85A2-EDE5562215C6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EchoService", "MaelstromNode\EchoService.csproj", "{4882EC97-418C-4D7A-85A2-EDE5562215C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaelstromNode", "MaelstromNodeBase\MaelstromNode.csproj", "{F233EEDA-80A9-4E84-AAF6-19F302516FAE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BroadcastService", "BroadcastService\BroadcastService.csproj", "{AC1DA533-9E4E-416B-8061-036BDAA3AD44}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniqueIdService", "UniqueIdService\UniqueIdService.csproj", "{5A6C17BF-7FEE-4D96-AC06-AE9D0997A7FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CounterService", "CounterService\CounterService.csproj", "{6527A757-7E82-43D2-9267-D140EA963CCB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaService", "KafkaService\KafkaService.csproj", "{925717EB-FAB1-46CB-978F-8D592096F7A5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workloads", "Workloads", "{CA9E0016-2D81-41E9-985B-6042B8EBA35D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,9 +27,36 @@ Global
 		{4882EC97-418C-4D7A-85A2-EDE5562215C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4882EC97-418C-4D7A-85A2-EDE5562215C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4882EC97-418C-4D7A-85A2-EDE5562215C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F233EEDA-80A9-4E84-AAF6-19F302516FAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F233EEDA-80A9-4E84-AAF6-19F302516FAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F233EEDA-80A9-4E84-AAF6-19F302516FAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F233EEDA-80A9-4E84-AAF6-19F302516FAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC1DA533-9E4E-416B-8061-036BDAA3AD44}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC1DA533-9E4E-416B-8061-036BDAA3AD44}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC1DA533-9E4E-416B-8061-036BDAA3AD44}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC1DA533-9E4E-416B-8061-036BDAA3AD44}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A6C17BF-7FEE-4D96-AC06-AE9D0997A7FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A6C17BF-7FEE-4D96-AC06-AE9D0997A7FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A6C17BF-7FEE-4D96-AC06-AE9D0997A7FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A6C17BF-7FEE-4D96-AC06-AE9D0997A7FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6527A757-7E82-43D2-9267-D140EA963CCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6527A757-7E82-43D2-9267-D140EA963CCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6527A757-7E82-43D2-9267-D140EA963CCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6527A757-7E82-43D2-9267-D140EA963CCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{925717EB-FAB1-46CB-978F-8D592096F7A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{925717EB-FAB1-46CB-978F-8D592096F7A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{925717EB-FAB1-46CB-978F-8D592096F7A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{925717EB-FAB1-46CB-978F-8D592096F7A5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4882EC97-418C-4D7A-85A2-EDE5562215C6} = {CA9E0016-2D81-41E9-985B-6042B8EBA35D}
+		{AC1DA533-9E4E-416B-8061-036BDAA3AD44} = {CA9E0016-2D81-41E9-985B-6042B8EBA35D}
+		{5A6C17BF-7FEE-4D96-AC06-AE9D0997A7FE} = {CA9E0016-2D81-41E9-985B-6042B8EBA35D}
+		{6527A757-7E82-43D2-9267-D140EA963CCB} = {CA9E0016-2D81-41E9-985B-6042B8EBA35D}
+		{925717EB-FAB1-46CB-978F-8D592096F7A5} = {CA9E0016-2D81-41E9-985B-6042B8EBA35D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A69B1778-8100-4DB8-99D8-C72333C7FBF4}

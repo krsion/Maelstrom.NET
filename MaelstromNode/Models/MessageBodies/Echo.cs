@@ -1,6 +1,7 @@
-﻿using System.Text.Json.Serialization;
+﻿using MaelstromNode.Models;
+using System.Text.Json.Serialization;
 
-namespace MaelstromNode.Models.MessageBodies;
+namespace EchoService.Models.MessageBodies;
 
 internal class Echo : MessageBody
 {
