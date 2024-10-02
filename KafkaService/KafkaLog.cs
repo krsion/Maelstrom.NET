@@ -5,11 +5,11 @@ using MaelstromNode.Models;
 
 namespace KafkaService
 {
-    internal class KafkaLog(ILogger<KafkaLog> logger, IReceiver receiver, ISender sender) : MaelstromNode.MaelstromNode(logger, receiver, sender)
+    internal class KafkaLog(ILogger<KafkaLog> logger, IMaelstromNode node) : Workload(logger, node)
     {
         private const int _maxReturnedMessages = 10;
         private const int _maxAttempts = 10;
-        protected new ILogger<KafkaLog> logger = logger;
+        private readonly ILogger<KafkaLog> logger = logger;
         private readonly SemaphoreSlim _offsetLock = new(1);
 
         [MaelstromHandler(Send.SendType)]
@@ -20,7 +20,7 @@ namespace KafkaService
             logger.LogInformation("Received send request: {Key} {Message}", send.Key, send.Message);
             var offset = await IncrementOffset(send.Key);
             await WriteLog(send.Key, offset, send.Message);
-            await ReplyAsync(message, new SendOk(offset));
+            await node.ReplyAsync(message, new SendOk(offset));
         }
 
         [MaelstromHandler(Poll.PollType)]
@@ -33,7 +33,7 @@ namespace KafkaService
             await Task.WhenAll(
                 poll.Offsets
                 .Select(async kv => messages[kv.Key] = await GetLogs(kv.Key, kv.Value)));
-            await ReplyAsync(message, new PollOk(messages));
+            await node.ReplyAsync(message, new PollOk(messages));
         }
 
         [MaelstromHandler(CommitOffsets.CommitOffsetsType)]
@@ -46,7 +46,7 @@ namespace KafkaService
                 commitOffsets.Offsets
                 .Select(kv => UpdateCommittedOffset(kv.Key, kv.Value)));
 
-            await ReplyAsync(message, new CommitOffsetsOk());
+            await node.ReplyAsync(message, new CommitOffsetsOk());
         }
 
         [MaelstromHandler(ListCommittedOffsets.ListCommittedOffsetsType)]
@@ -60,7 +60,7 @@ namespace KafkaService
                     .Select(async k => new KeyValuePair<string, int>(k, await GetCommittedOffset(k)))))
                 .ToDictionary();
 
-            await ReplyAsync(message, new ListCommittedOffsetsOk(committedOffsets));
+            await node.ReplyAsync(message, new ListCommittedOffsetsOk(committedOffsets));
         }
 
         private static string GetOffsetKey(string key) => $"offsets/{key}";
@@ -100,7 +100,7 @@ namespace KafkaService
 
                 try
                 {
-                    await LinKvStoreClient.CasAsync(committedKey, offset, value, createIfNotExists: true);
+                    await node.LinKvStoreClient.CasAsync(committedKey, offset, value, createIfNotExists: true);
                 }
                 catch (KvStoreCasPreconditionFailed)
                 {
@@ -122,7 +122,7 @@ namespace KafkaService
         {
             try
             {
-                return await LinKvStoreClient.ReadAsync<string, int>(key);
+                return await node.LinKvStoreClient.ReadAsync<string, int>(key);
             }
             catch (KvStoreKeyNotFoundException)
             {
@@ -139,7 +139,7 @@ namespace KafkaService
                 var newOffset = offset + 1;
                 try
                 {
-                    await LinKvStoreClient.CasAsync(key, offset, newOffset, createIfNotExists: true);
+                    await node.LinKvStoreClient.CasAsync(key, offset, newOffset, createIfNotExists: true);
                 }
                 catch (KvStoreCasPreconditionFailed)
                 {
@@ -162,7 +162,7 @@ namespace KafkaService
         private async Task WriteLog(string key, int offset, int message)
         {
             logger.LogDebug("Writing log: {Key} {Offset} {Message}", key, offset, message);
-            await SeqKvStoreClient.WriteAsync(GetLogKey(key, offset), message);
+            await node.SeqKvStoreClient.WriteAsync(GetLogKey(key, offset), message);
         }
 
         private async Task<List<List<int>>> GetLogs(string key, int offset)
@@ -173,7 +173,7 @@ namespace KafkaService
             {
                 try
                 {
-                    var log = await SeqKvStoreClient.ReadAsync<string, int>(GetLogKey(key, offset));
+                    var log = await node.SeqKvStoreClient.ReadAsync<string, int>(GetLogKey(key, offset));
                     logs.Add([offset, log]);
                     offset++;
                 }

@@ -5,9 +5,9 @@ using UniqueIdService.Models.MessageBodies;
 
 namespace UniqueIdService;
 
-internal class UniqueIdGenerator(ILogger<UniqueIdGenerator> logger, IReceiver receiver, ISender sender) : MaelstromNode.MaelstromNode(logger, receiver, sender)
+internal class UniqueIdGenerator(ILogger<UniqueIdGenerator> logger, IMaelstromNode node) : Workload(logger, node)
 {
-    protected new ILogger<UniqueIdGenerator> logger = logger;
+    private readonly ILogger<UniqueIdGenerator> logger = logger;
     private int _idCounter = 0;
 
     [MaelstromHandler(Generate.GenerateType)]
@@ -16,7 +16,7 @@ internal class UniqueIdGenerator(ILogger<UniqueIdGenerator> logger, IReceiver re
         message.DeserializeAs<Generate>();
         var generatedId = GenerateId();
         logger.LogInformation("Received Generate request, generated id {Id}", generatedId);
-        await ReplyAsync(message, new GenerateOk(GenerateId()));
+        await node.ReplyAsync(message, new GenerateOk(GenerateId()));
     }
 
     private int GenerateId()

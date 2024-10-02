@@ -2,41 +2,41 @@
 using MaelstromNode.Models;
 using MaelstromNode.Models.MessageBodies;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Text.Json;
 
 namespace MaelstromNode;
 
-public class MaelstromNode : BackgroundService, IMaelstromNode
+public class MaelstromNode : IMaelstromNode
 {
-    protected readonly ILogger<MaelstromNode> logger;
+    private readonly ILogger<MaelstromNode> logger;
     private readonly IReceiver _receiver;
     private readonly ISender _sender;
-    public string NodeId = "";
-    public string[] NodeIds = [];
-    protected readonly KvStoreClient SeqKvStoreClient;
-    protected readonly KvStoreClient LinKvStoreClient;
+    private string _nodeId = "";
+    private string[] _nodeIds = [];
+    private readonly KvStoreClient _seqKvStoreClient;
+    private readonly KvStoreClient _linKvStoreClient;
 
     private int _msgId = 0;
-    private readonly Dictionary<string, Func<Message, Task>> _messageHandlers;
+    private readonly Dictionary<string, Func<Message, Task>> _messageHandlers = [];
     private readonly Dictionary<int, TaskCompletionSource<Message>> _replyHandlers = [];
     private readonly HashSet<Task> _activeHandlers = [];
     private readonly SemaphoreSlim _sendLock = new(1);
     private readonly SemaphoreSlim _replyHandlersLock = new(1);
+
+    public string NodeId => _nodeId;
+    public string[] NodeIds => _nodeIds;
+    public KvStoreClient SeqKvStoreClient => _seqKvStoreClient;
+    public KvStoreClient LinKvStoreClient => _linKvStoreClient;
 
     public MaelstromNode(ILogger<MaelstromNode> logger, IReceiver receiver, ISender sender)
     {
         this.logger = logger;
         _receiver = receiver;
         _sender = sender;
-        _messageHandlers = GetType()
-            .GetMethods()
-            .Where(m => m.GetCustomAttributes().OfType<MaelstromHandlerAttribute>().Any())
-            .ToDictionary(m => m.GetCustomAttribute<MaelstromHandlerAttribute>()!.MessageType, m => (Func<Message, Task>)m.CreateDelegate(typeof(Func<Message, Task>), this));
-        SeqKvStoreClient = new(this, this.logger, "seq-kv");
-        LinKvStoreClient = new(this, this.logger, "lin-kv");
+        _seqKvStoreClient = new(this, this.logger, "seq-kv");
+        _linKvStoreClient = new(this, this.logger, "lin-kv");
     }
 
     public static IServiceCollection SetupDependencies<RecT, SendT>(IServiceCollection services)
@@ -45,12 +45,26 @@ public class MaelstromNode : BackgroundService, IMaelstromNode
     {
         services.AddSingleton<IReceiver, RecT>();
         services.AddSingleton<ISender, SendT>();
+        services.AddSingleton<IMaelstromNode, MaelstromNode>();
         return services;
     }
 
     public static IServiceCollection SetupDependencies(IServiceCollection services) => SetupDependencies<StdinReceiver, StdoutSender>(services);
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public void AddMessageHandlers<T>(T workload) where T : class
+    {
+        var handlers = workload.GetType()
+            .GetMethods()
+            .Where(m => m.GetCustomAttributes().OfType<MaelstromHandlerAttribute>().Any())
+            .ToDictionary(m => m.GetCustomAttribute<MaelstromHandlerAttribute>()!.MessageType, m => (Func<Message, Task>)m.CreateDelegate(typeof(Func<Message, Task>), workload));
+
+        foreach (var handler in handlers)
+        {
+            _messageHandlers.Add(handler.Key, handler.Value);
+        }
+    }
+
+    public async Task RunAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("Starting...");
         await InitAsync(stoppingToken);
@@ -112,18 +126,16 @@ public class MaelstromNode : BackgroundService, IMaelstromNode
             throw new Exception("First message must be an init message");
         }
         message.DeserializeAs<Init>();
-        NodeId = ((Init)message.Body).NodeId;
-        NodeIds = ((Init)message.Body).NodeIds;
+        _nodeId = ((Init)message.Body).NodeId;
+        _nodeIds = ((Init)message.Body).NodeIds;
         logger.LogInformation("Node initialized. Node ID: {NodeId}", NodeId);
         await ReplyAsync(message, new InitOk());
     }
 
-    public override async Task StopAsync(CancellationToken cancellationToken)
+    public void Dispose()
     {
-        logger.LogInformation("Stopping...");
         _sender.Dispose();
         _receiver.Dispose();
-        await base.StopAsync(cancellationToken);
     }
 
     private async Task<Message?> RecvAsync(CancellationToken? cancellationToken = null)

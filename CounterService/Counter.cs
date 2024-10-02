@@ -5,11 +5,11 @@ using MaelstromNode.Models;
 
 namespace CounterService;
 
-internal class Counter(ILogger<Counter> logger, IReceiver receiver, ISender sender) : MaelstromNode.MaelstromNode(logger, receiver, sender)
+internal class Counter(ILogger<Counter> logger, IMaelstromNode node) : Workload(logger, node)
 {
     private const string _counterKey = "counter";
     private const int _maxAttempts = 10;
-    protected new ILogger<Counter> logger = logger;
+    private readonly ILogger<Counter> logger = logger;
 
     [MaelstromHandler(Read.ReadType)]
     public async Task HandleRead(Message message)
@@ -19,7 +19,7 @@ internal class Counter(ILogger<Counter> logger, IReceiver receiver, ISender send
         // Increment by 0 to force read of latest value from store.
         var latestValue = await IncrementValue(0);
         logger.LogInformation("Counter read OK, value {value}", latestValue);
-        await ReplyAsync(message, new ReadOk<int>(latestValue));
+        await node.ReplyAsync(message, new ReadOk<int>(latestValue));
     }
 
     [MaelstromHandler(Add.AddType)]
@@ -28,7 +28,7 @@ internal class Counter(ILogger<Counter> logger, IReceiver receiver, ISender send
         message.DeserializeAs<Add>();
         var add = (Add)message.Body;
         logger.LogDebug("Received counter add {delta}", add.Delta);
-        await ReplyAsync(message, new AddOk());
+        await node.ReplyAsync(message, new AddOk());
         var latestValue = await IncrementValue(add.Delta);
         logger.LogInformation("Counter incremented by {delta} to {val}", add.Delta, latestValue);
     }
@@ -37,7 +37,7 @@ internal class Counter(ILogger<Counter> logger, IReceiver receiver, ISender send
     {
         try
         {
-            return await SeqKvStoreClient.ReadAsync<string, int>(_counterKey);
+            return await node.SeqKvStoreClient.ReadAsync<string, int>(_counterKey);
         }
         catch (KvStoreKeyNotFoundException)
         {
@@ -55,7 +55,7 @@ internal class Counter(ILogger<Counter> logger, IReceiver receiver, ISender send
             var latestValue = await GetValue();
             try
             {
-                await SeqKvStoreClient.CasAsync(_counterKey, latestValue, latestValue + delta, createIfNotExists: true);
+                await node.SeqKvStoreClient.CasAsync(_counterKey, latestValue, latestValue + delta, createIfNotExists: true);
             }
             catch (KvStoreCasPreconditionFailed)
             {

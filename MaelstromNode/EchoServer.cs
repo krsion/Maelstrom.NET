@@ -5,9 +5,9 @@ using MaelstromNode.Models;
 
 namespace EchoService;
 
-internal class EchoServer(ILogger<EchoServer> logger, IReceiver receiver, ISender sender) : MaelstromNode.MaelstromNode(logger, receiver, sender)
+internal class EchoServer(ILogger<EchoServer> logger, IMaelstromNode node) : Workload(logger, node)
 {
-    protected new ILogger<EchoServer> logger = logger;
+    private readonly ILogger<EchoServer> logger = logger;
 
     [MaelstromHandler(Echo.EchoType)]
     public async Task HandleEcho(Message message)
@@ -15,6 +15,6 @@ internal class EchoServer(ILogger<EchoServer> logger, IReceiver receiver, ISende
         message.DeserializeAs<Echo>();
         var echo = (Echo)message.Body;
         logger.LogInformation("Echoing message: {EchoMessage}", echo.EchoMessage);
-        await ReplyAsync(message, new EchoOk(echo.EchoMessage));
+        await node.ReplyAsync(message, new EchoOk(echo.EchoMessage));
     }
 }
