@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KafkaService", "KafkaServic
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workloads", "Workloads", "{CA9E0016-2D81-41E9-985B-6042B8EBA35D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TransactionRwRegisterService", "TransactionRwRegisterService\TransactionRwRegisterService.csproj", "{1A55D1B7-7041-4462-B22D-D45B1CFCD55E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{925717EB-FAB1-46CB-978F-8D592096F7A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{925717EB-FAB1-46CB-978F-8D592096F7A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{925717EB-FAB1-46CB-978F-8D592096F7A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A55D1B7-7041-4462-B22D-D45B1CFCD55E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A55D1B7-7041-4462-B22D-D45B1CFCD55E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A55D1B7-7041-4462-B22D-D45B1CFCD55E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A55D1B7-7041-4462-B22D-D45B1CFCD55E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -57,6 +63,7 @@ Global
 		{5A6C17BF-7FEE-4D96-AC06-AE9D0997A7FE} = {CA9E0016-2D81-41E9-985B-6042B8EBA35D}
 		{6527A757-7E82-43D2-9267-D140EA963CCB} = {CA9E0016-2D81-41E9-985B-6042B8EBA35D}
 		{925717EB-FAB1-46CB-978F-8D592096F7A5} = {CA9E0016-2D81-41E9-985B-6042B8EBA35D}
+		{1A55D1B7-7041-4462-B22D-D45B1CFCD55E} = {CA9E0016-2D81-41E9-985B-6042B8EBA35D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A69B1778-8100-4DB8-99D8-C72333C7FBF4}
