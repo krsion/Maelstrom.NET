@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EchoService", "MaelstromNode\EchoService.csproj", "{4882EC97-418C-4D7A-85A2-EDE5562215C6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EchoService", "EchoService\EchoService.csproj", "{4882EC97-418C-4D7A-85A2-EDE5562215C6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaelstromNode", "MaelstromNodeBase\MaelstromNode.csproj", "{F233EEDA-80A9-4E84-AAF6-19F302516FAE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaelstromNode", "MaelstromNode\MaelstromNode.csproj", "{F233EEDA-80A9-4E84-AAF6-19F302516FAE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BroadcastService", "BroadcastService\BroadcastService.csproj", "{AC1DA533-9E4E-416B-8061-036BDAA3AD44}"
 EndProject
