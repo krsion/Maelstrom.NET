@@ -167,7 +167,6 @@ internal class TransactionRwRegister(ILogger<TransactionRwRegister> logger, IMae
     {
         int attempts = 1;
         int maxAttempts = 10;
-        int delayMs = 10;
 
         while (attempts <= maxAttempts)
         {
@@ -194,8 +193,7 @@ internal class TransactionRwRegister(ILogger<TransactionRwRegister> logger, IMae
             }
             catch (KvStoreCasPreconditionFailed)
             {
-                logger.LogWarning("CAS failed, waiting and retrying");
-                await Task.Delay(delayMs + new Random().Next(-2, 2));
+                logger.LogWarning("CAS failed, retrying");
                 attempts++;
                 continue;
             }
