@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace TransationRwRegisterService.Models;
+namespace TransactionRwRegisterService.Models;
 
 internal class Operation
 {

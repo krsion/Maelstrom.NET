@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace TransationRwRegisterService.Models.MessageBodies
+namespace TransactionRwRegisterService.Models.MessageBodies
 {
     internal class TransactionOk : MessageBody
     {

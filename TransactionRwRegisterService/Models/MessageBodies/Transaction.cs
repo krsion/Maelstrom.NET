@@ -1,7 +1,7 @@
 ﻿using Maelstrom.Models;
 using System.Text.Json.Serialization;
 
-namespace TransationRwRegisterService.Models.MessageBodies;
+namespace TransactionRwRegisterService.Models.MessageBodies;
 
 internal class Transaction : MessageBody
 {

@@ -8,6 +8,9 @@ namespace Maelstrom;
 
 internal class KvStoreClient(IMaelstromNode node, ILogger<IMaelstromNode> logger, string serviceName) : IKvStoreClient
 {
+    private const int _defaultMaxAttempts = 10;
+    private const int _defaultDelay = 10;
+
     private readonly string _serviceName = serviceName;
     private readonly ILogger<IMaelstromNode> logger = logger;
     private readonly IMaelstromNode _node = node;
@@ -34,6 +37,19 @@ internal class KvStoreClient(IMaelstromNode node, ILogger<IMaelstromNode> logger
         var readOk = (ReadOk<U>)response.Body;
         logger.LogDebug("Read key {key}: {value}", key, readOk.Value);
         return readOk.Value;
+    }
+
+    public async Task<U> ReadOrDefaultAsync<T, U>(T key, U defaultVal)
+    {
+        try
+        {
+            return await ReadAsync<T, U>(key);
+        }
+        catch (KvStoreKeyNotFoundException)
+        {
+            logger.LogDebug("Key {key} not found, returning default {default}", key, defaultVal);
+            return defaultVal;
+        }
     }
 
     public async Task WriteAsync<T, U>(T key, U value)
@@ -82,6 +98,34 @@ internal class KvStoreClient(IMaelstromNode node, ILogger<IMaelstromNode> logger
             default:
                 throw new Exception($"Unexpected return type for CAS operation: {response.Body.Type}");
         }
+    }
+
+    public async Task<U> SafeUpdateAsync<T, U>(T key, Func<U, U> translation, U defaultVal, int maxAttempts = _defaultMaxAttempts, int delayMs = _defaultDelay)
+    {
+        int attempts = 1;
+        while (attempts <= maxAttempts)
+        {
+            U latestValue = await ReadOrDefaultAsync(key, defaultVal);
+            var newValue = translation(latestValue);
+            logger.LogDebug("Update {key} from {old} to {new}, attempt {attempts}", key, latestValue, newValue, attempts);
+            try
+            {
+                await CasAsync(key, latestValue, newValue, createIfNotExists: true);
+            }
+            catch (KvStoreCasPreconditionFailed)
+            {
+                logger.LogWarning("CAS failed, waiting and retrying");
+                await Task.Delay(delayMs + new Random().Next(-2, 2));
+                attempts++;
+                continue;
+            }
+
+            logger.LogDebug("Update {key} succeeded", key);
+            return newValue;
+        }
+
+        logger.LogError("Update {key} failed after {attempts} attempts", key, maxAttempts);
+        throw new KvStoreException($"Update {key} failed after {maxAttempts} attempts");
     }
 }
 
