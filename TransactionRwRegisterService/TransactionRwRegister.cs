@@ -203,11 +203,11 @@ internal class TransactionRwRegister(ILogger<TransactionRwRegister> logger, IMae
         throw new KvStoreException($"Update last committed {key} failed after {maxAttempts} attempts");
     }
 
-    private async Task<int> ReadRemoteKeyWithTransaction(int key, int transactionId) => await node.SeqKvStoreClient.ReadAsync<string, int>(GetRemoteKey(key, transactionId));
+    private async Task<int> ReadRemoteKeyWithTransaction(int key, int transactionId) => await node.LinKvStoreClient.ReadAsync<string, int>(GetRemoteKey(key, transactionId));
 
     private async Task<int> GetLastCommittedTransaction(int key) => await node.LinKvStoreClient.ReadAsync<string, int>(GetLastCommittedKey(key));
 
-    private async Task WriteWremoteKeyWithTransaction(int key, int val, int transactionId) => await node.SeqKvStoreClient.WriteAsync(GetRemoteKey(key, transactionId), val);
+    private async Task WriteWremoteKeyWithTransaction(int key, int val, int transactionId) => await node.LinKvStoreClient.WriteAsync(GetRemoteKey(key, transactionId), val);
 
     private static string GetRemoteKey(int key, int transactionId) => $"data/{key}/{transactionId}";
 
