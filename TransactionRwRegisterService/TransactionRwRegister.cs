@@ -41,6 +41,11 @@ internal class TransactionRwRegister(ILogger<TransactionRwRegister> logger, IMae
 
             await CommitTransaction(transactionId, localStore);
         }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to complete transaction: {txnId}", transactionId);
+            throw;
+        }
         finally
         {
             CompleteTransaction(transactionId);

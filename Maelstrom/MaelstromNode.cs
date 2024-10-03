@@ -89,13 +89,26 @@ internal class MaelstromNode : IMaelstromNode
         }
         else if (_messageHandlers.TryGetValue(message.Body.Type, out var handler))
         {
-            var hTask = handler(message);
+            var hTask = HandleMessageAsync(message, handler);
             _activeHandlers.Add(hTask);
         }
         else
         {
             logger.LogError("Message type {MessageType} not supported", message.Body.Type);
             await ErrorAsync(message, ErrorCodes.NotSupported, $"Message type {message.Body.Type} not supported");
+        }
+    }
+
+    private async Task HandleMessageAsync(Message message, Func<Message, Task> handler)
+    {
+        try
+        {
+            await handler(message);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error handling message of type {messageType}", message.Body.Type);
+            await ErrorAsync(message, ErrorCodes.Crash, $"Unexpected error handling message: {ex}");
         }
     }
 
