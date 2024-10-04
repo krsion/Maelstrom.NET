@@ -20,8 +20,5 @@ public class MessageBody
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
     };
 
-    public string? Serialize()
-    {
-        return JsonSerializer.Serialize<object>(this, _jsonSerializerOptions);
-    }
+    public string? Serialize() => JsonSerializer.Serialize<object>(this, _jsonSerializerOptions);
 }
