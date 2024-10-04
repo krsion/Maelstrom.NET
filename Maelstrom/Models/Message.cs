@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
@@ -6,6 +7,7 @@ namespace Maelstrom.Models;
 
 public class Message
 {
+    [SetsRequiredMembers]
     public Message(string src, string dest, MessageBody body)
     {
         Src = src;
@@ -35,11 +37,11 @@ public class Message
     public JsonObject? RawBody { get; set; }
 
     [JsonIgnore]
-    public MessageBody Body { get; set; }
+    public required MessageBody Body { get; set; }
 
     public void DeserializeAs<T>() where T : MessageBody
     {
-        Body = RawBody.Deserialize<T>();
+        Body = RawBody.Deserialize<T>() ?? throw new Exception($"Failed to deserialize message body as {typeof(T)}/");
     }
 
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
@@ -50,7 +52,7 @@ public class Message
     public string Serialize()
     {
         // A bit of a hack until I can figure out a better way to do this.
-        RawBody = JsonSerializer.Deserialize<JsonObject>(Body.Serialize());
+        RawBody = JsonSerializer.Deserialize<JsonObject>(Body.Serialize() ?? throw new Exception("Failed to serialize body"));
         return JsonSerializer.Serialize(this, _jsonSerializerOptions);
     }
 }
