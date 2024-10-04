@@ -33,43 +33,5 @@ internal class Counter(ILogger<Counter> logger, IMaelstromNode node) : Workload(
         logger.LogInformation("Counter incremented by {delta} to {val}", add.Delta, latestValue);
     }
 
-    private async Task<int> GetValue()
-    {
-        try
-        {
-            return await node.SeqKvStoreClient.ReadAsync<string, int>(_counterKey);
-        }
-        catch (KvStoreKeyNotFoundException)
-        {
-            logger.LogInformation("Counter does not exist, assume 0");
-            return 0;
-        }
-    }
-
-    private async Task<int> IncrementValue(int delta)
-    {
-        int attempts = 1;
-        while (attempts <= _maxAttempts)
-        {
-            logger.LogDebug("Increment counter by {delta}, attempt {attempts}", delta, attempts);
-            var latestValue = await GetValue();
-            try
-            {
-                await node.SeqKvStoreClient.CasAsync(_counterKey, latestValue, latestValue + delta, createIfNotExists: true);
-            }
-            catch (KvStoreCasPreconditionFailed)
-            {
-                logger.LogWarning("CAS failed, waiting and retrying");
-                await Task.Delay(10 + new Random().Next(-2, 2));
-                attempts++;
-                continue;
-            }
-
-            logger.LogDebug("Increment succeeded");
-            return latestValue + delta;
-        }
-
-        logger.LogError("Increment failed after {attempts} attempts", _maxAttempts);
-        throw new Exception("Increment failed after max attempts");
-    }
+    private async Task<int> IncrementValue(int delta) => await node.SeqKvStoreClient.SafeUpdateAsync(_counterKey, v => v + delta, 0, maxAttempts: _maxAttempts);
 }

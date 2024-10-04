@@ -118,44 +118,9 @@ namespace KafkaService
             throw new Exception("Increment offset failed after max attempts");
         }
 
-        private async Task<int> GetCounter(string key)
-        {
-            try
-            {
-                return await node.LinKvStoreClient.ReadAsync<string, int>(key);
-            }
-            catch (KvStoreKeyNotFoundException)
-            {
-                return 0;
-            }
-        }
-        private async Task<int> IncrementCounter(string key)
-        {
-            int attempts = 1;
-            while (attempts <= _maxAttempts)
-            {
-                logger.LogDebug("Get counter {key}, attempt {attempts}", key, attempts);
-                var offset = await GetCounter(key);
-                var newOffset = offset + 1;
-                try
-                {
-                    await node.LinKvStoreClient.CasAsync(key, offset, newOffset, createIfNotExists: true);
-                }
-                catch (KvStoreCasPreconditionFailed)
-                {
-                    logger.LogWarning("CAS failed, waiting and retrying");
-                    await Task.Delay(10 + new Random().Next(-2, 2));
-                    attempts++;
-                    continue;
-                }
+        private async Task<int> GetCounter(string key) => await node.LinKvStoreClient.ReadOrDefaultAsync(key, 0);
 
-                logger.LogDebug("Increment succeeded, new {key} = {offset}", key, newOffset);
-                return newOffset;
-            }
-
-            logger.LogError("Increment offset failed after {attempts} attempts", _maxAttempts);
-            throw new Exception("Increment offset failed after max attempts");
-        }
+        private async Task<int> IncrementCounter(string key) => await node.LinKvStoreClient.SafeUpdateAsync(key, v => v + 1, 0, maxAttempts: _maxAttempts);
 
         private static string GetLogKey(string key, int offset) => $"logs/{key}/{offset}";
 
