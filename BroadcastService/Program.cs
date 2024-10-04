@@ -1,8 +1,7 @@
 ﻿using Maelstrom;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<BroadcastService.BroadcastService>();
-MaelstromNodeBuilder.SetupDependencies(builder.Services);
+MaelstromNodeBuilder.AddMaelstromNodeWorkload<BroadcastService.BroadcastService>(builder.Services);
 
 using IHost host = builder.Build();
 await host.RunAsync();
