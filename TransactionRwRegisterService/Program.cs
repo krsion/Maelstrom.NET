@@ -2,7 +2,7 @@
 using TransactionRwRegisterService;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-MaelstromNodeBuilder.AddMaelstromNodeWorkload<TransactionRwRegister>(builder.Services);
+builder.Services.AddMaelstromNodeWorkload<TransactionRwRegister>();
 
 using IHost host = builder.Build();
 await host.RunAsync();

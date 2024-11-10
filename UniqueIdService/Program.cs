@@ -2,7 +2,7 @@
 using UniqueIdService;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-MaelstromNodeBuilder.AddMaelstromNodeWorkload<UniqueIdGenerator>(builder.Services);
+builder.Services.AddMaelstromNodeWorkload<UniqueIdGenerator>();
 
 using IHost host = builder.Build();
 await host.RunAsync();

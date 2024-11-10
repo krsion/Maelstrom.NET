@@ -2,7 +2,7 @@
 using Maelstrom;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-MaelstromNodeBuilder.AddMaelstromNodeWorkload<Counter>(builder.Services);
+builder.Services.AddMaelstromNodeWorkload<Counter>();
 
 using IHost host = builder.Build();
 await host.RunAsync();

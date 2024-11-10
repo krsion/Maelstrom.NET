@@ -2,7 +2,7 @@
 using Maelstrom;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-MaelstromNodeBuilder.AddMaelstromNodeWorkload<KafkaLog>(builder.Services);
+builder.Services.AddMaelstromNodeWorkload<KafkaLog>();
 
 using IHost host = builder.Build();
 await host.RunAsync();
