@@ -60,7 +60,8 @@ internal class MaelstromNode : IMaelstromNode
             var message = await RecvAsync(stoppingToken);
             if (message != null)
             {
-                await ProcessMessageAsync(message);
+                logger.LogInformation("Received message of type: {MessageType}", message.Body.Type);
+                _activeHandlers.Add(ProcessMessageAsync(message));
             }
             else
             {
@@ -73,7 +74,6 @@ internal class MaelstromNode : IMaelstromNode
 
     private async Task ProcessMessageAsync(Message message)
     {
-        logger.LogInformation("Received message of type: {MessageType}", message.Body.Type);
         if (message.Body.InReplyTo != null)
         {
             int replyId = (int)message.Body.InReplyTo!;
@@ -89,26 +89,20 @@ internal class MaelstromNode : IMaelstromNode
         }
         else if (_messageHandlers.TryGetValue(message.Body.Type, out var handler))
         {
-            var hTask = HandleMessageAsync(message, handler);
-            _activeHandlers.Add(hTask);
+            try
+            {
+                await handler(message);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Unexpected error handling message of type {messageType}", message.Body.Type);
+                await ErrorAsync(message, ErrorCodes.Crash, $"Unexpected error handling message: {ex}");
+            }
         }
         else
         {
             logger.LogError("Message type {MessageType} not supported", message.Body.Type);
             await ErrorAsync(message, ErrorCodes.NotSupported, $"Message type {message.Body.Type} not supported");
-        }
-    }
-
-    private async Task HandleMessageAsync(Message message, Func<Message, Task> handler)
-    {
-        try
-        {
-            await handler(message);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Unexpected error handling message of type {messageType}", message.Body.Type);
-            await ErrorAsync(message, ErrorCodes.Crash, $"Unexpected error handling message: {ex}");
         }
     }
 
