@@ -74,35 +74,42 @@ internal class MaelstromNode : IMaelstromNode
 
     private async Task ProcessMessageAsync(Message message)
     {
-        if (message.Body.InReplyTo != null)
+        try
         {
-            int replyId = (int)message.Body.InReplyTo!;
-            var replyTcs = await GetReplyHandler(replyId);
-            if (replyTcs == null)
+            if (message.Body.InReplyTo != null)
             {
-                logger.LogError("No handler found for reply message with id {ReplyId}", replyId);
+                int replyId = (int)message.Body.InReplyTo!;
+                var replyTcs = await GetReplyHandler(replyId);
+                if (replyTcs == null)
+                {
+                    logger.LogError("No handler found for reply message with id {ReplyId}", replyId);
+                }
+                else
+                {
+                    replyTcs.SetResult(message);
+                }
+            }
+            else if (_messageHandlers.TryGetValue(message.Body.Type, out var handler))
+            {
+                try
+                {
+                    await handler(message);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unexpected error handling message of type {messageType}", message.Body.Type);
+                    await ErrorAsync(message, ErrorCodes.Crash, $"Unexpected error handling message: {ex}");
+                }
             }
             else
             {
-                replyTcs.SetResult(message);
+                logger.LogError("Message type {MessageType} not supported", message.Body.Type);
+                await ErrorAsync(message, ErrorCodes.NotSupported, $"Message type {message.Body.Type} not supported");
             }
         }
-        else if (_messageHandlers.TryGetValue(message.Body.Type, out var handler))
+        catch (Exception ex)
         {
-            try
-            {
-                await handler(message);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Unexpected error handling message of type {messageType}", message.Body.Type);
-                await ErrorAsync(message, ErrorCodes.Crash, $"Unexpected error handling message: {ex}");
-            }
-        }
-        else
-        {
-            logger.LogError("Message type {MessageType} not supported", message.Body.Type);
-            await ErrorAsync(message, ErrorCodes.NotSupported, $"Message type {message.Body.Type} not supported");
+            logger.LogError(ex, "Unexpected error processing message");
         }
     }
 
