@@ -15,8 +15,7 @@ namespace KafkaService
         [MaelstromHandler(Send.SendType)]
         public async Task HandleSend(Message message)
         {
-            message.DeserializeAs<Send>();
-            var send = (Send)message.Body;
+            var send = message.DeserializeAs<Send>();
             logger.LogInformation("Received send request: {Key} {Message}", send.Key, send.Message);
             var offset = await IncrementOffset(send.Key);
             await WriteLog(send.Key, offset, send.Message);
@@ -26,8 +25,7 @@ namespace KafkaService
         [MaelstromHandler(Poll.PollType)]
         public async Task HandlePoll(Message message)
         {
-            message.DeserializeAs<Poll>();
-            var poll = (Poll)message.Body;
+            var poll = message.DeserializeAs<Poll>();
             logger.LogInformation("Received poll request: {Offsets}", poll.Offsets);
             Dictionary<string, List<List<int>>> messages = [];
             await Task.WhenAll(
@@ -39,8 +37,7 @@ namespace KafkaService
         [MaelstromHandler(CommitOffsets.CommitOffsetsType)]
         public async Task HandleCommitOffsets(Message message)
         {
-            message.DeserializeAs<CommitOffsets>();
-            var commitOffsets = (CommitOffsets)message.Body;
+            var commitOffsets = message.DeserializeAs<CommitOffsets>();
             logger.LogInformation("Received commit offsets request: {Offsets}", commitOffsets.Offsets);
             await Task.WhenAll(
                 commitOffsets.Offsets
@@ -52,8 +49,7 @@ namespace KafkaService
         [MaelstromHandler(ListCommittedOffsets.ListCommittedOffsetsType)]
         public async Task HandleListCommittedOffsets(Message message)
         {
-            message.DeserializeAs<ListCommittedOffsets>();
-            var listCommittedOffsets = (ListCommittedOffsets)message.Body;
+            var listCommittedOffsets = message.DeserializeAs<ListCommittedOffsets>();
             logger.LogInformation("Received list committed offsets request: {Keys}", listCommittedOffsets.Keys);
             Dictionary<string, int> committedOffsets = (await Task.WhenAll(
                 listCommittedOffsets.Keys

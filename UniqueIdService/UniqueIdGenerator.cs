@@ -13,7 +13,6 @@ internal class UniqueIdGenerator(ILogger<UniqueIdGenerator> logger, IMaelstromNo
     [MaelstromHandler(Generate.GenerateType)]
     public async Task HandleGenerate(Message message)
     {
-        message.DeserializeAs<Generate>();
         var generatedId = GenerateId();
         logger.LogInformation("Received Generate request, generated id {Id}", generatedId);
         await node.ReplyAsync(message, new GenerateOk(GenerateId()));

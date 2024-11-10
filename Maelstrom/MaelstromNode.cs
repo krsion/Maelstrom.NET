@@ -125,9 +125,9 @@ internal class MaelstromNode : IMaelstromNode
             await ErrorAsync(message, ErrorCodes.MalformedRequest, "First message must be an init message");
             throw new Exception("First message must be an init message");
         }
-        message.DeserializeAs<Init>();
-        _nodeId = ((Init)message.Body).NodeId;
-        _nodeIds = ((Init)message.Body).NodeIds;
+        var init = message.DeserializeAs<Init>();
+        _nodeId = init.NodeId;
+        _nodeIds = init.NodeIds;
         logger.LogInformation("Node initialized. Node ID: {NodeId}", NodeId);
         await ReplyAsync(message, new InitOk());
     }

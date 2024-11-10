@@ -15,8 +15,7 @@ internal class TransactionRwRegister(ILogger<TransactionRwRegister> logger, IMae
     [MaelstromHandler(Models.MessageBodies.Transaction.TxnType)]
     public async Task HandleTransaction(Message message)
     {
-        message.DeserializeAs<Models.MessageBodies.Transaction>();
-        var transaction = (Models.MessageBodies.Transaction)message.Body;
+        var transaction = message.DeserializeAs<Models.MessageBodies.Transaction>();
         var completedTransactions = await ExecuteTransactions(transaction.Operations);
         await node.ReplyAsync(message, new TransactionOk(completedTransactions));
     }

@@ -25,8 +25,7 @@ internal class Counter(ILogger<Counter> logger, IMaelstromNode node) : Workload(
     [MaelstromHandler(Add.AddType)]
     public async Task HandleAdd(Message message)
     {
-        message.DeserializeAs<Add>();
-        var add = (Add)message.Body;
+        var add = message.DeserializeAs<Add>();
         logger.LogDebug("Received counter add {delta}", add.Delta);
         await node.ReplyAsync(message, new AddOk());
         var latestValue = await IncrementValue(add.Delta);

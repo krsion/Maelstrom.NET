@@ -12,8 +12,7 @@ internal class EchoServer(ILogger<EchoServer> logger, IMaelstromNode node) : Wor
     [MaelstromHandler(Echo.EchoType)]
     public async Task HandleEcho(Message message)
     {
-        message.DeserializeAs<Echo>();
-        var echo = (Echo)message.Body;
+        var echo = message.DeserializeAs<Echo>();
         logger.LogInformation("Echoing message: {EchoMessage}", echo.EchoMessage);
         await node.ReplyAsync(message, new EchoOk(echo.EchoMessage));
     }

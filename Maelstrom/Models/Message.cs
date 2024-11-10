@@ -21,7 +21,7 @@ public class Message
         Src = src;
         Dest = dest;
         RawBody = rawBody;
-        DeserializeAs<MessageBody>();
+        Body = DeserializeAs<MessageBody>();
     }
 
     [JsonPropertyName("src")]
@@ -37,11 +37,11 @@ public class Message
     public JsonObject? RawBody { get; set; }
 
     [JsonIgnore]
-    public required MessageBody Body { get; set; }
+    public MessageBody Body { get; set; }
 
-    public void DeserializeAs<T>() where T : MessageBody
+    public T DeserializeAs<T>() where T : MessageBody
     {
-        Body = RawBody.Deserialize<T>() ?? throw new Exception($"Failed to deserialize message body as {typeof(T)}/");
+        return RawBody.Deserialize<T>() ?? throw new Exception($"Failed to deserialize message body as {typeof(T)}/");
     }
 
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new()

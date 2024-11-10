@@ -15,8 +15,7 @@ internal class BroadcastService(ILogger<BroadcastService> logger, IMaelstromNode
     [MaelstromHandler(Broadcast.BroadcastType)]
     public async Task HandleBroadcast(Message message)
     {
-        message.DeserializeAs<Broadcast>();
-        var broadcastMessage = ((Broadcast)message.Body).BroadcastMessage;
+        var broadcastMessage = message.DeserializeAs<Broadcast>().BroadcastMessage;
         logger.LogInformation("Received broadcast message: {BroadcastMessage}", broadcastMessage);
         await node.ReplyAsync(message, new BroadcastOk());
         if (_broadcastMessages.Contains(broadcastMessage))
@@ -39,7 +38,6 @@ internal class BroadcastService(ILogger<BroadcastService> logger, IMaelstromNode
     [MaelstromHandler(Read.ReadType)]
     public async Task HandleRead(Message message)
     {
-        message.DeserializeAs<Read>();
         logger.LogInformation("Received read request");
         await node.ReplyAsync(message, new ReadOk([.. _broadcastMessages]));
     }
@@ -47,8 +45,7 @@ internal class BroadcastService(ILogger<BroadcastService> logger, IMaelstromNode
     [MaelstromHandler(Topology.TopologyType)]
     public async Task HandleTopology(Message message)
     {
-        message.DeserializeAs<Topology>();
-        var topologyMessage = (Topology)message.Body;
+        var topologyMessage = message.DeserializeAs<Topology>();
         logger.LogInformation("Received topology: {topology}", topologyMessage.TopologyData);
         var topology = topologyMessage.TopologyData.Deserialize<Dictionary<string, string[]>>();
         if (topology == null)
