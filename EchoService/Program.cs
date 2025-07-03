@@ -1,8 +1,19 @@
 ﻿using EchoService;
 using Maelstrom;
 
-HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddMaelstromNodeWorkload<EchoServer>();
+var builder = Host.CreateDefaultBuilder(args)
+    .ConfigureLogging(logging =>
+    {
+        logging.ClearProviders();
+        logging.AddConsole(options =>
+        {
+            options.LogToStandardErrorThreshold = LogLevel.Trace; // All logs go to stderr
+        });
+    })
+    .ConfigureServices(services =>
+    {
+        services.AddMaelstromNodeWorkload<EchoServer>();
+    });
 
 using IHost host = builder.Build();
 await host.RunAsync();
