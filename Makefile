@@ -3,3 +3,6 @@ build:
 
 echo:
 	java -jar lib/maelstrom.jar test -w echo --bin "bin/EchoService" --time-limit 5
+
+serve:
+	java -jar lib/maelstrom.jar serve
